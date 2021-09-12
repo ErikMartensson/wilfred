@@ -1,5 +1,6 @@
 import {
   AppBar,
+  Box,
   Button,
   Card,
   CardActions,
@@ -14,13 +15,14 @@ import {
 import {
   AccountCircle,
   Email,
+  Explore,
 } from '@material-ui/icons';
+import { Pagination } from '@material-ui/lab';
 import { makeStyles } from '@material-ui/core/styles';
-import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import styled from 'styled-components';
-import { IUser } from './interface/User.interface';
-import { IRandomUserResponse } from './interface/RandomUser.interface';
+import { useAppDispatch, useAppSelector } from './app/hooks';
+import { initProfiles, changePage } from './features/profiles/profilesSlice';
 
 const useStyles = makeStyles((theme) => ({
   icon: {
@@ -56,26 +58,29 @@ const useStyles = makeStyles((theme) => ({
 
 const Avatar = styled.img`
   display: block;
-  width: 128px;
-  height: 128px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   margin: 1em 0 0;
 `;
 
 export default function Album() {
   const classes = useStyles();
-  const [users, setUsers] = useState<IUser[] | undefined>();
+  const dispatch = useAppDispatch();
+  const {
+    profiles,
+    status: profilesStatus,
+    page,
+    pages,
+  } = useAppSelector(({ profiles }) => profiles);
+
+  const handleChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    dispatch(changePage(value));
+  };
 
   useEffect(() => {
-    const getUsers = async () => {
-      // @TODO: Make it 50 users here
-      const {
-        data: { results },
-      } = await axios.get<IRandomUserResponse>('https://randomuser.me/api/?results=12');
-      setUsers(results);
-    };
-    getUsers();
-  }, []);
+    dispatch(initProfiles());
+  }, [dispatch])
 
   return (
     <>
@@ -103,42 +108,83 @@ export default function Album() {
         </div>
 
         <Container className={classes.cardGrid} maxWidth="lg">
-          {users ? (
-            <Grid container spacing={4}>
-              {users.map((user, index) => (
-                <Grid item key={++index} xs={12} sm={6} md={4} lg={3}>
-                  <Card className={classes.card}>
-                    <Grid container justifyContent="center">
-                      <Avatar
-                        src={user.picture.large}
-                      />
-                    </Grid>
-                    <CardContent className={classes.cardContent}>
-                      <Typography gutterBottom variant="h5" component="h2">
-                        {user.name.first} {user.name.last}
-                      </Typography>
-                      <Typography>
-                        {user.location.city}, {user.location.country}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        color="primary"
-                        href={`mailto:${user.email}`}
-                        size="small"
-                        startIcon={<Email />}
-                      >
-                        Contact
-                      </Button>
-                    </CardActions>
-                  </Card>
+          {profiles.length ? (
+            <>
+              <Grid container spacing={4}>
+                {profiles.map((user, index) => (
+                  <Grid item key={++index} xs={12} sm={6} md={4} lg={3}>
+                    <Card className={classes.card}>
+                      <Grid container justifyContent="center">
+                        <Avatar
+                          src={user.picture.large}
+                        />
+                      </Grid>
+                      <CardContent className={classes.cardContent}>
+                        <Typography gutterBottom variant="body1" component="h2">
+                          {user.name.first} {user.name.last}
+                        </Typography>
+                        <Typography variant="body2">
+                          {user.location.city}, {user.location.country}
+                        </Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Box pl={1}>
+                          <Button
+                            color="primary"
+                            href={`mailto:${user.email}`}
+                            size="small"
+                            startIcon={<Email />}
+                          >
+                            Contact
+                          </Button>
+                          <Button
+                            color="primary"
+                            href={`http://maps.google.com/maps?q=${user.location.coordinates.latitude},${user.location.coordinates.longitude}`}
+                            size="small"
+                            startIcon={<Explore />}
+                            target="_blank"
+                            rel="nofollow"
+                          >
+                            Location
+                          </Button>
+                        </Box>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+              <Grid
+                container
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                spacing={4}
+              >
+                <Grid item>
+                  <Box pt={3}>
+                    <Pagination
+                      // +1 So we always can go to the next page
+                      count={pages + 1}
+                      page={page}
+                      onChange={handleChange}
+                    />
+                  </Box>
                 </Grid>
-              ))}
-            </Grid>
-          ) : (
+                {profilesStatus === 'loading' && (
+                  <Grid item>
+                    <CircularProgress />
+                  </Grid>
+                )}
+              </Grid>
+            </>
+          ) : profilesStatus === 'loading' ? (
             <Grid container justifyContent="center">
               <CircularProgress />
             </Grid>
+          ) : (
+            <Typography>
+              Something went wrong
+            </Typography>
           )}
         </Container>
       </main>

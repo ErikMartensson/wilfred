@@ -1,0 +1,22 @@
+# Top-most EditorConfig file
+root = true
+
+# For all files we want to:
+[*]
+# Use Unix-style newlines
+end_of_line = lf
+# Set default charset to utf-8
+charset = utf-8
+# Insert final newline (empty line at end of each file)
+insert_final_newline = true
+# Trim trailing whitespaces
+trim_trailing_whitespace = true
+
+# 2 space indentation
+[*.{ts,js,json}]
+indent_style = space
+indent_size = 2
+
+# Single quotes in our TypeScript files
+[*.ts]
+quote_type = single
